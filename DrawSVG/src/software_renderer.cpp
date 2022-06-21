@@ -254,7 +254,36 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
   sx0 = sx0 <= 0 ? 0 : sx0;  sx1 = sx1 > target_w ? target_w : sx1;
   sy0 = sy0 <= 0 ? 0 : sy0;  sy1 = sy1 > target_h ? target_h : sy1;
 
-  
+  int dx = sx1 - sx0;
+  int dy = sy1 - sy0;
+
+  int dLong = abs(dx);
+  int dShort = abs(dy);
+
+  int offsetLong = dx > 0 ? 1 : -1;
+  int offsetShort = dy > 0 ? target_w : -target_w;
+
+  if (dLong < dShort)
+  {
+      swap(dShort, dLong);
+      swap(offsetShort, offsetLong);
+  }
+
+  int error = dLong / 2;
+  int index = sy0 * target_w + sx0;
+  const int offset[] = { offsetLong, offsetLong + offsetShort };
+  const int abs_d[] = { dShort, dShort - dLong };
+  for (int i = 0; i <= dLong; ++i)
+  {
+      render_target[4 * index] = (uint8_t)(color.r * 255);
+      render_target[4 * index + 1] = (uint8_t)(color.g * 255);
+      render_target[4 * index + 2] = (uint8_t)(color.b * 255);
+      render_target[4 * index + 3] = (uint8_t)(color.a * 255);
+      const int errorIsTooBig = error >= dLong;
+      index += offset[errorIsTooBig];
+      error += abs_d[errorIsTooBig];
+
+  }
 }
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
